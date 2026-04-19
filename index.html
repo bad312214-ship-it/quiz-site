@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اختبار محاسبة التكاليف</title>
+
+<style>
+body {
+    font-family: Tahoma;
+    background: #f4f6f9;
+    margin: 0;
+}
+
+header {
+    background: #1e3a5f;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.question-box {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+button.option {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #f8f9fa;
+    cursor: pointer;
+}
+
+button.selected {
+    background: #007bff;
+    color: white;
+}
+
+.nav {
+    text-align: center;
+    margin: 20px;
+}
+
+.nav button {
+    padding: 10px 20px;
+    margin: 5px;
+}
+
+.correct { background: #28a745 !important; color: white; }
+.wrong { background: #dc3545 !important; color: white; }
+
+</style>
+</head>
+
+<body>
+
+<header>اختبار محاسبة التكاليف</header>
+
+<div class="nav">
+<button onclick="showPage(1)">صح / خطأ</button>
+<button onclick="showPage(2)">اختيار واحد</button>
+<button onclick="showPage(3)">اختيار متعدد</button>
+<button onclick="finishExam()">إنهاء الاختبار</button>
+</div>
+
+<div class="container" id="page1"></div>
+<div class="container" id="page2" style="display:none;"></div>
+<div class="container" id="page3" style="display:none;"></div>
+
+<div class="container" id="result" style="display:none;"></div>
+
+<script>
+
+// ================= البيانات =================
+
+// صح وخطأ
+const tfQuestions = [
+{q:"محاسبة التكاليف امتداد للمحاسبة المالية", options:["صح","خطأ"], answer:0, explanation:"هي امتداد للمحاسبة المالية"},
+{q:"لا يوجد فرق بين المصروف والخسارة", options:["صح","خطأ"], answer:1, explanation:"يوجد فرق واضح بينهما"},
+];
+
+// اختيار واحد
+const singleQuestions = [
+{q:"الهدف الرئيسي لمحاسبة التكاليف هو:", options:["الأرباح","تكلفة الوحدات","المبيعات","لا شيء"], answer:1, explanation:"الهدف هو قياس تكلفة الوحدات"},
+{q:"التكاليف غير المباشرة هي:", options:["مرتبطة بالمنتج","لا يمكن ربطها مباشرة","ثابتة","لا شيء"], answer:1, explanation:"لا ترتبط مباشرة بمنتج معين"},
+];
+
+// اختيار متعدد (هنا نعاملها كإجابة واحدة لكن يمكن تطويرها لاحقًا)
+const multiQuestions = [
+{q:"من أهداف محاسبة التكاليف:", options:["الرقابة","التخطيط","قياس التكلفة","كل ما سبق"], answer:3, explanation:"كلها أهداف صحيحة"},
+];
+
+// ================= التخزين =================
+let answers = {};
+
+// ================= عرض =================
+function renderQuestions(containerId, questions, type){
+    let html = "";
+
+    questions.forEach((q,i)=>{
+        html += `
+        <div class="question-box">
+            <p><b>${i+1}. ${q.q}</b></p>
+            ${q.options.map((opt,index)=>`
+                <button class="option"
+                onclick="select('${type}',${i},${index})"
+                id="${type}-${i}-${index}">
+                ${opt}
+                </button>
+            `).join("")}
+        </div>
+        `;
+    });
+
+    document.getElementById(containerId).innerHTML = html;
+}
+
+// ================= اختيار =================
+function select(type, qIndex, optIndex){
+
+    answers[type+"-"+qIndex] = optIndex;
+
+    document.querySelectorAll(`[id^='${type}-${qIndex}-']`)
+    .forEach(btn => btn.classList.remove("selected"));
+
+    document.getElementById(`${type}-${qIndex}-${optIndex}`)
+    .classList.add("selected");
+}
+
+// ================= تنقل =================
+function showPage(n){
+    document.getElementById("page1").style.display="none";
+    document.getElementById("page2").style.display="none";
+    document.getElementById("page3").style.display="none";
+
+    document.getElementById("page"+n).style.display="block";
+}
+
+// ================= إنهاء =================
+function finishExam(){
+
+    let score = 0;
+    let total = tfQuestions.length + singleQuestions.length + multiQuestions.length;
+
+    // تصحيح
+    tfQuestions.forEach((q,i)=>{
+        if(answers["tf-"+i] == q.answer) score++;
+    });
+
+    singleQuestions.forEach((q,i)=>{
+        if(answers["single-"+i] == q.answer) score++;
+    });
+
+    multiQuestions.forEach((q,i)=>{
+        if(answers["multi-"+i] == q.answer) score++;
+    });
+
+    let percent = Math.round((score/total)*100);
+
+    let resultHTML = `
+    <h2>النتيجة</h2>
+    <h3>${score} / ${total}</h3>
+    <h2>${percent}%</h2>
+    <button onclick="review()">مراجعة</button>
+    `;
+
+    document.getElementById("result").innerHTML = resultHTML;
+    document.getElementById("result").style.display="block";
+}
+
+// ================= مراجعة =================
+function review(){
+
+    let html = "<h2>المراجعة</h2>";
+
+    function renderReview(questions, type){
+        questions.forEach((q,i)=>{
+
+            html += `<div class="question-box"><p><b>${q.q}</b></p>`;
+
+            q.options.forEach((opt,index)=>{
+                let cls="";
+                if(index === q.answer) cls="correct";
+                if(index === answers[type+"-"+i] && index !== q.answer) cls="wrong";
+
+                html += `<div class="${cls}">${opt}</div>`;
+            });
+
+            html += `<p><b>الشرح:</b> ${q.explanation}</p></div>`;
+        });
+    }
+
+    renderReview(tfQuestions,"tf");
+    renderReview(singleQuestions,"single");
+    renderReview(multiQuestions,"multi");
+
+    document.getElementById("result").innerHTML = html;
+}
+
+// ================= تشغيل =================
+renderQuestions("page1", tfQuestions, "tf");
+renderQuestions("page2", singleQuestions, "single");
+renderQuestions("page3", multiQuestions, "multi");
+
+</script>
+
+</body>
+</html>
